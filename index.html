@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BB2 – page de test</title>
+<style>
+  body { font: 16px/1.4 system-ui, sans-serif; margin: 0; padding: 16px; max-width: 720px; background: #fafafa; color: #1c1c1c; }
+  h1 { font-size: 1.3rem; margin: 0 0 12px; }
+  h2 { font-size: 1.05rem; margin: 20px 0 6px; }
+  section { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+  button, input[type=file] { font: inherit; padding: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  td, th { border-bottom: 1px solid #eee; padding: 4px 6px; text-align: left; }
+  .ok { color: #0a7a2f; font-weight: 600; } .ko { color: #b00020; font-weight: 600; }
+  .muted { color: #666; font-size: .85rem; }
+</style>
+</head>
+<body>
+<h1>BB2 – page de test (M1)</h1>
+<p class="muted">Aucune donnée n'est envoyée : le fichier est lu sur cet appareil.</p>
+
+<section>
+  <h2>1. Page ouverte</h2>
+  <p class="ok">Test 1 réussi : la page s'affiche.</p>
+</section>
+
+<section>
+  <h2>2. Sauvegarde (.dsv de DraStic)</h2>
+  <input type="file" id="file">
+  <div id="result" class="muted">Aucun fichier choisi.</div>
+</section>
+
+<section>
+  <h2>3. Stockage du navigateur</h2>
+  <button id="save">Enregistrer une valeur</button>
+  <p id="stored" class="muted"></p>
+  <p class="muted">Test 4 : enregistrer, fermer complètement Chrome, rouvrir cette page : la valeur doit rester affichée.</p>
+</section>
+
+<script>
+// Logique du MVP : lecture d'une sauvegarde B2W2 (.dsv DraStic ou .sav brut).
+// Même code dans Node (tests) et dans le navigateur (page). Port de poc/read_dsv.py.
+(function (root) {
+  "use strict";
+
+  const SAV_SIZE = 0x80000;
+  const PARTY = 0x18E00, BOXES = 0x400, BOX_SIZE = 0x1000, TRAINER = 0x19400;
+  const DEX_CAUGHT = 0x21408, DEX_BYTES = 0x54;
+  const ORDERS = ["ABCD","ABDC","ACBD","ACDB","ADBC","ADCB","BACD","BADC","BCAD","BCDA","BDAC","BDCA",
+                  "CABD","CADB","CBAD","CBDA","CDAB","CDBA","DABC","DACB","DBAC","DBCA","DCAB","DCBA"];
+  const NATURES = ["Hardi","Solo","Brave","Rigide","Mauvais","Assuré","Docile","Relax","Malin","Lâche",
+                   "Timide","Pressé","Sérieux","Jovial","Naïf","Modeste","Doux","Discret","Pudique","Foufou",
+                   "Calme","Gentil","Malpoli","Prudent","Bizarre"];
+  // Ordre des IVs dans le fichier : PV, Atq, Déf, Vit, AtqS, DéfS
+  const STAT_KEYS = ["pv", "atq", "def", "vit", "atqs", "defs"];
+
+  function crypt(data, seed) {
+    const out = new Uint8Array(data.length);
+    const dv = new DataView(data.buffer, data.byteOffset, data.length);
+    const ov = new DataView(out.buffer);
+    for (let i = 0; i < data.length; i += 2) {
+      seed = (Math.imul(seed, 0x41C64E6D) + 0x6073) >>> 0;
+      ov.setUint16(i, dv.getUint16(i, true) ^ (seed >>> 16), true);
+    }
+    return out;
+  }
+
+  function decodePk(pk) {
+    const dv = new DataView(pk.buffer, pk.byteOffset, pk.length);
+    const pid = dv.getUint32(0, true), chk = dv.getUint16(6, true);
+    const body = crypt(pk.subarray(8, 136), chk);
+    const order = ORDERS[((pid >>> 13) & 31) % 24];
+    const d = new Uint8Array(pk.length);
+    d.set(pk.subarray(0, 8), 0);
+    for (let i = 0; i < 4; i++) {
+      const b = order.indexOf("ABCD"[i]);
+      d.set(body.subarray(b * 32, b * 32 + 32), 8 + i * 32);
+    }
+    if (pk.length > 136) d.set(crypt(pk.subarray(136, 220), pid), 136);
+    const dd = new DataView(d.buffer);
+    let sum = 0;
+    for (let i = 8; i < 136; i += 2) sum = (sum + dd.getUint16(i, true)) & 0xFFFF;
+    return { d, dd, checksumOk: sum === chk };
+  }
+
+  function utf16(d, off, len) {
+    let s = "";
+    for (let i = 0; i < len; i += 2) {
+      const c = d[off + i] | (d[off + i + 1] << 8);
+      if (c === 0xFFFF || c === 0) break;
+      s += String.fromCharCode(c);
+    }
+    return s;
+  }
+
+  function summarize(pk) {
+    const { d, dd, checksumOk } = decodePk(pk);
+    const ivw = dd.getUint32(0x38, true);
+    const ivs = {};
+    STAT_KEYS.forEach((k, i) => { ivs[k] = (ivw >>> (5 * i)) & 31; });
+    const p = {
+      species: dd.getUint16(0x08, true),
+      nickname: utf16(d, 0x48, 22),
+      nature: d[0x41],
+      natureName: d[0x41] < NATURES.length ? NATURES[d[0x41]] : "?",
+      ivs, checksumOk,
+    };
+    if (pk.length > 136) {
+      p.level = d[0x8C];
+      const s = [0x8E, 0x90, 0x92, 0x94, 0x96, 0x98, 0x9A].map((o) => dd.getUint16(o, true));
+      p.stats = { pv: s[1], atq: s[2], def: s[3], vit: s[4], atqs: s[5], defs: s[6] };
+    }
+    return p;
+  }
+
+  const isEmpty = (b) => b.every((x) => x === 0);
+
+  // bytes : Uint8Array du fichier. Lève une Error au message clair si le fichier est inutilisable.
+  function parseSave(bytes) {
+    if (bytes.length < SAV_SIZE) {
+      throw new Error(`Fichier trop court (${bytes.length} octets, 524 288 attendus) : ce n'est pas une sauvegarde B2W2.`);
+    }
+    const sav = bytes.subarray(0, SAV_SIZE); // coupe le pied de page DeSmuME (122 octets)
+    const sv = new DataView(sav.buffer, sav.byteOffset, sav.length);
+
+    const caught = [];
+    for (let i = 0; i < DEX_BYTES * 8; i++) {
+      if ((sav[DEX_CAUGHT + (i >> 3)] >> (i & 7)) & 1) caught.push(i + 1);
+    }
+
+    const count = sv.getUint32(PARTY + 4, true);
+    if (count > 6) throw new Error(`Équipe illisible (${count} Pokémon) : mauvais fichier ou sauvegarde corrompue.`);
+    const party = [];
+    for (let i = 0; i < count; i++) {
+      const o = PARTY + 8 + i * 220;
+      party.push(summarize(sav.subarray(o, o + 220)));
+    }
+
+    const boxes = [];
+    for (let b = 0; b < 24; b++) {
+      for (let s = 0; s < 30; s++) {
+        const o = BOXES + b * BOX_SIZE + s * 136;
+        const pk = sav.subarray(o, o + 136);
+        if (isEmpty(pk.subarray(0, 8))) continue;
+        boxes.push(Object.assign({ box: b + 1, slot: s + 1 }, summarize(pk)));
+      }
+    }
+
+    return {
+      size: bytes.length,
+      trainer: utf16(sav, TRAINER + 4, 16),
+      caught, party, boxes,
+      invalid: party.concat(boxes).filter((p) => !p.checksumOk).length,
+    };
+  }
+
+  const api = { parseSave, NATURES, STAT_KEYS };
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+  else root.BB2 = api;
+})(typeof self !== "undefined" ? self : this);
+
+</script>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function render(r, file) {
+  const mod = file.lastModified ? new Date(file.lastModified).toLocaleString("fr-FR") : "inconnue";
+  const rows = (list) => list.map((p) =>
+    `<tr><td>${p.box ? "B" + p.box + "-" + p.slot : ""}</td><td>#${p.species} ${esc(p.nickname)}</td><td>${p.level ?? ""}</td><td>${esc(p.natureName)}</td>` +
+    `<td>${BB2.STAT_KEYS.map((k) => p.ivs[k]).join("/")}</td><td class="${p.checksumOk ? "ok" : "ko"}">${p.checksumOk ? "ok" : "KO"}</td></tr>`).join("");
+  const head = "<tr><th></th><th>Espèce</th><th>Niv.</th><th>Nature</th><th>IV PV/Atq/Déf/Vit/AtqS/DéfS</th><th>Somme</th></tr>";
+  $("result").className = "";
+  $("result").innerHTML =
+    `<p><b>${esc(file.name)}</b> – ${r.size} octets – modifié le ${esc(mod)}<br>Dresseur : ${esc(r.trainer)}</p>` +
+    `<p class="ok">Test 3 : ${r.caught.length} espèces capturées</p>` +
+    `<p class="muted">N° nationaux : ${r.caught.join(", ")}</p>` +
+    `<h2>Équipe (${r.party.length})</h2><table>${head}${rows(r.party)}</table>` +
+    `<h2>Boîtes (${r.boxes.length})</h2><table>${head}${rows(r.boxes)}</table>` +
+    (r.invalid ? `<p class="ko">${r.invalid} Pokémon avec somme de contrôle invalide.</p>` : "");
+}
+
+$("file").addEventListener("change", async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  try {
+    render(BB2.parseSave(new Uint8Array(await f.arrayBuffer())), f);
+  } catch (err) {
+    $("result").className = "ko";
+    $("result").textContent = err.message;
+  }
+});
+
+const KEY = "bb2_test_valeur";
+function showStored() {
+  let v = null, err = null;
+  try { v = localStorage.getItem(KEY); } catch (e) { err = e.message; }
+  $("stored").textContent = err ? "Stockage indisponible : " + err
+    : v ? "Valeur enregistrée : " + v : "Aucune valeur enregistrée.";
+}
+$("save").addEventListener("click", () => {
+  try { localStorage.setItem(KEY, new Date().toLocaleString("fr-FR")); } catch (e) { /* affiché par showStored */ }
+  showStored();
+});
+showStored();
+</script>
+</body>
+</html>
