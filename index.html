@@ -2,63 +2,257 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>BB2 Redux – compagnon</title>
 <style>
-  :root { --bg:#f4f5f7; --card:#fff; --ink:#1c1c1c; --muted:#666; --line:#e2e2e6; --accent:#2457d6; --ok:#0a7a2f; --ko:#b00020; --warn:#8a5a00; }
+  /* Thème clair puis sombre : mêmes noms de variables dans les deux. */
+  :root {
+    --bg-0:#eef1f7; --bg-1:#e2e9f7; --surface:#fff; --surface-2:#f2f4f9;
+    --ink:#161a22; --muted:#5b6270; --line:#dfe3ec;
+    --accent:#2457d6; --accent-fg:#fff; --accent-bg:rgba(36,87,214,.10); --accent-strong:#1a3fa3;
+    --ok:#0a7a2f; --ok-bg:#e1f3e6; --warn:#8a5a00; --ko:#b00020;
+    --sh-card:0 6px 18px rgba(20,32,70,.06), 0 1px 3px rgba(20,32,70,.05);
+    --sh-soft:0 12px 34px rgba(20,32,70,.10), 0 2px 6px rgba(20,32,70,.05);
+    --halo:rgba(36,87,214,.16); --halo-2:rgba(227,53,13,.08);
+    --r-lg:14px; --r-md:10px;
+  }
   @media (prefers-color-scheme: dark) {
-    :root { --bg:#16181d; --card:#20232a; --ink:#ececec; --muted:#a0a4ad; --line:#333843; --accent:#7ba3ff; --ok:#5fd88a; --ko:#ff7a8e; --warn:#e8b254; }
+    :root {
+      --bg-0:#10121a; --bg-1:#151b2c; --surface:#1c2029; --surface-2:#262b37;
+      --ink:#eceef3; --muted:#a0a6b3; --line:#2f3542;
+      --accent:#7ba3ff; --accent-fg:#0b1430; --accent-bg:rgba(123,163,255,.16); --accent-strong:#a9c3ff;
+      --ok:#5fd88a; --ok-bg:rgba(95,216,138,.14); --warn:#e8b254; --ko:#ff7a8e;
+      --sh-card:0 6px 18px rgba(0,0,0,.30), 0 1px 3px rgba(0,0,0,.25);
+      --sh-soft:0 12px 34px rgba(0,0,0,.40), 0 2px 6px rgba(0,0,0,.25);
+      --halo:rgba(123,163,255,.20); --halo-2:rgba(240,120,90,.06);
+    }
   }
   * { box-sizing: border-box; }
-  body { font: 16px/1.4 system-ui, sans-serif; margin: 0; background: var(--bg); color: var(--ink); }
-  header { position: sticky; top: 0; z-index: 5; background: var(--card); border-bottom: 1px solid var(--line); }
-  nav { display: flex; max-width: 900px; margin: 0 auto; }
-  nav button { flex: 1; border: 0; background: none; color: var(--muted); font: inherit; padding: 12px 4px; min-height: 48px; border-bottom: 3px solid transparent; }
-  nav button[aria-selected=true] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
-  main { max-width: 900px; margin: 0 auto; padding: 12px; }
-  h1 { font-size: 1.2rem; margin: 4px 0 10px; } h2 { font-size: 1.05rem; margin: 16px 0 6px; } h3 { font-size: .95rem; margin: 12px 0 4px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+  body { font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; margin: 0; background: var(--bg-0); color: var(--ink); }
+  .bg-layer, #detail { background:
+      radial-gradient(circle at 8% -6%, var(--halo), transparent 45%),
+      radial-gradient(circle at 96% -4%, var(--halo-2), transparent 40%),
+      linear-gradient(170deg, var(--bg-1) 0%, var(--bg-0) 55%) var(--bg-0); }
+  .bg-layer { position: fixed; inset: 0; z-index: -1; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  main, .inner { max-width: 900px; margin: 0 auto; padding: 14px 14px 110px; }
+
+  /* En-tête de page */
+  .top { padding: 8px 4px 12px; }
+  .eyebrow { font-size: 10.5px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; color: var(--accent); }
+  h1 { font-size: 28px; line-height: 1.15; font-weight: 800; letter-spacing: -.02em; margin: 2px 0 4px; }
+  .sub { color: var(--muted); font-size: 14px; }
+  .sub b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .meter { height: 6px; border-radius: 99px; background: var(--surface-2); overflow: hidden; margin-top: 10px; box-shadow: inset 0 0 0 1px var(--line); }
+  .meter i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--ok)); }
+
+  /* Cartes et sections */
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--sh-card); padding: 14px 16px; margin-bottom: 12px; }
+  .card.list { padding: 4px; }
+  .card h2 { font-size: 12px; letter-spacing: .11em; text-transform: uppercase; color: var(--accent); margin: 0 0 10px; }
+  h3 { font-size: .95rem; margin: 14px 0 6px; }
+  .muted { color: var(--muted); font-size: .85rem; } .warn { color: var(--warn); }
+  .ok { color: var(--ok); } .ko { color: var(--ko); }
+  .help { font-size: 12.5px; color: var(--muted); margin-top: 8px; }
+  .foot { font-size: 12.5px; color: var(--muted); padding: 4px 6px; }
+
+  /* Contrôles */
+  input, select, button.btn { font: inherit; min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); color: var(--ink); }
+  input[type=file] { padding: 9px 12px; }
+  select { appearance: none; padding-right: 30px; background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238a8f9c' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 12px center; }
+  select.active { border-color: var(--accent); background-color: var(--accent-bg); color: var(--accent-strong); font-weight: 600; }
+  button.btn { cursor: pointer; font-weight: 600; }
+  button.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  button.btn.small { min-height: 38px; font-size: 14px; }
+  button.btn:disabled { opacity: .5; }
   .bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
   .bar > * { flex: 1 1 130px; }
-  input, select, button.btn { font: inherit; padding: 10px; min-height: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); }
-  button.btn { cursor: pointer; } button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-  label.chk { display: flex; align-items: center; gap: 8px; min-height: 44px; }
-  label.chk input { min-height: 0; width: 20px; height: 20px; }
-  .row { display: flex; align-items: center; gap: 8px; padding: 8px 4px; border-bottom: 1px solid var(--line); cursor: pointer; min-height: 48px; }
-  .row:last-child { border-bottom: 0; }
-  .row .main { flex: 1; min-width: 0; } .row .sub { color: var(--muted); font-size: .8rem; }
-  .num { color: var(--muted); width: 3.2em; text-align: right; font-variant-numeric: tabular-nums; }
-  .mark { width: 2.2em; text-align: center; font-weight: 700; }
-  .mark.save, .ok { color: var(--ok); } .mark.manual { color: var(--warn); } .mark.miss, .ko { color: var(--ko); }
-  .muted { color: var(--muted); font-size: .85rem; } .warn { color: var(--warn); }
-  .chip { display: inline-block; border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; font-size: .78rem; margin-right: 4px; }
-  .prog { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin-top: 4px; } .prog i { display: block; height: 100%; background: var(--ok); }
-  table { border-collapse: collapse; width: 100%; font-size: .88rem; }
-  th, td { border-bottom: 1px solid var(--line); padding: 5px 6px; text-align: left; } td.r, th.r { text-align: right; }
-  .seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-  .seg button { flex: 1; border: 0; background: var(--card); color: var(--ink); font: inherit; padding: 10px 4px; min-height: 44px; }
-  .seg button[aria-pressed=true] { background: var(--accent); color: #fff; }
-  #detail { position: fixed; inset: 0; z-index: 10; background: var(--bg); overflow-y: auto; display: none; }
-  #detail.open { display: block; } #detail .inner { max-width: 900px; margin: 0 auto; padding: 12px; }
-  a.link { color: var(--accent); cursor: pointer; text-decoration: underline; }
-  details summary { cursor: pointer; padding: 8px 0; min-height: 44px; }
-  .grid6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
-  .grid6 label { font-size: .75rem; color: var(--muted); text-align: center; }
-  .grid6 input { width: 100%; padding: 8px 2px; text-align: center; }
-  .field { display: block; margin-bottom: 8px; } .field > span { display: block; font-size: .85rem; color: var(--muted); }
+  .field { display: block; margin-bottom: 10px; }
+  .field > span, .field > small { display: block; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px 2px; }
   .field input, .field select { width: 100%; }
+  .seg { display: flex; padding: 3px; gap: 3px; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--line); }
+  .seg button { flex: 1; border: 0; background: none; font: inherit; font-size: 14px; color: var(--muted); min-height: 38px; border-radius: 8px; cursor: pointer; }
+  .seg button[aria-pressed=true] { background: var(--surface); color: var(--accent-strong); font-weight: 700; box-shadow: var(--sh-card); }
+  .switch { display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; position: relative; }
+  .switch input { position: absolute; opacity: 0; width: 1px; height: 1px; min-height: 0; }
+  .switch i { flex: none; width: 40px; height: 24px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--line); position: relative; transition: background .2s; }
+  .switch i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--muted); transition: transform .2s, background .2s; }
+  .switch input:checked + i { background: var(--accent); border-color: var(--accent); }
+  .switch input:checked + i::after { transform: translateX(16px); background: var(--accent-fg); }
+  .switch input:focus-visible + i { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* Bloc de filtres collant (Pokédex) */
+  .filters { position: sticky; top: 8px; z-index: 3; padding: 10px; margin-bottom: 12px; border: 1px solid var(--line); border-radius: var(--r-lg);
+    background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(10px); box-shadow: var(--sh-soft); }
+  .search { display: flex; align-items: center; gap: 8px; padding-left: 12px; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--line); color: var(--muted); }
+  .search input { flex: 1; border: 0; background: none; padding-left: 0; min-width: 0; }
+  .search input:focus-visible { outline: none; } .search:focus-within { border-color: var(--accent); }
+  .filters .seg { margin-top: 8px; }
+  .fields { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-top: 8px; align-items: end; }
+  .fields .field { margin: 0; }
+  .fields .btn { width: 44px; padding: 0; font-size: 18px; }
+  .actives { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; padding-top: 9px; border-top: 1px dashed var(--line); font-size: 13px; }
+  .actives:empty { display: none; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 6px 0 10px; border: 0; border-radius: 99px; background: var(--accent-bg); color: var(--accent-strong); font: inherit; font-weight: 600; cursor: pointer; }
+  .pill i { font-style: normal; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); font-size: 11px; }
+  .linkbtn { margin-left: auto; border: 0; background: none; color: var(--accent); font: inherit; font-weight: 600; min-height: 30px; cursor: pointer; }
+  .count { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); padding: 0 6px 8px; }
+  .count b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  /* Lignes de liste */
+  .row { display: flex; align-items: center; gap: 12px; padding: 9px 8px; min-height: 60px; border-radius: var(--r-md); cursor: pointer; }
+  .row + .row { box-shadow: 0 -1px 0 var(--line); }
+  .row:hover, .row:active { background: var(--surface-2); }
+  .row .main { flex: 1; min-width: 0; }
+  .row .name { font-weight: 650; line-height: 1.25; }
+  .row .name small { color: var(--muted); font-weight: 400; font-size: 13px; margin-left: 6px; }
+  .row .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 3px; font-size: 12.5px; color: var(--muted); }
+  .row .meta b { color: var(--ink); }
+  .no { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; font-weight: 600; }
+  .chev { color: var(--muted); opacity: .6; font-size: 18px; margin-left: -4px; }
+  .enter { animation: enter .45s ease both; animation-delay: var(--d, 0ms); }
+
+  /* Disque d'espèce : couleurs des deux types, grisé tant que non capturé */
+  .ball { position: relative; flex: none; width: 42px; height: 42px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--a) 0 50%, var(--b, var(--a)) 50% 100%); box-shadow: inset 0 0 0 2px rgba(255,255,255,.35); }
+  .ball::before { content: ""; position: absolute; left: 0; right: 0; top: calc(50% - 1.5px); height: 3px; background: rgba(0,0,0,.28); }
+  .ball::after { content: ""; position: absolute; width: 12px; height: 12px; left: calc(50% - 6px); top: calc(50% - 6px); border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px rgba(0,0,0,.28); }
+  .ball.miss { filter: grayscale(.9); opacity: .45; }
+  .ball.big { width: 74px; height: 74px; }
+  .ball.big::after { width: 20px; height: 20px; left: calc(50% - 10px); top: calc(50% - 10px); }
+  .badge { position: absolute; z-index: 2; right: -4px; bottom: -3px; min-width: 19px; height: 19px; padding: 0 4px; border-radius: 99px;
+    display: grid; place-items: center; font-size: 11px; font-weight: 800; border: 2px solid var(--surface); color: var(--surface); }
+  .badge.save { background: var(--ok); } .badge.manual { background: var(--warn); } .badge.miss { background: var(--ko); }
+  .mark { width: 2.2em; text-align: center; font-weight: 700; }
+  .mark.save { color: var(--ok); } .mark.manual { color: var(--warn); } .mark.miss { color: var(--ko); }
+
+  .chip { display: inline-flex; align-items: center; padding: 1px 8px; border-radius: 99px; font-size: 11.5px; font-weight: 650; margin-right: 2px;
+    background: color-mix(in srgb, var(--t, var(--muted)) 18%, var(--surface));
+    color: color-mix(in srgb, var(--t, var(--muted)) 42%, var(--ink));
+    border: 1px solid color-mix(in srgb, var(--t, var(--muted)) 35%, transparent); }
+  .chip.season { --t: var(--warn); }
+
+  /* Barre de navigation basse */
+  .tabbar { position: fixed; z-index: 20; left: 50%; transform: translateX(-50%); bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    width: min(100% - 20px, 560px); display: flex; padding: 6px; border: 1px solid var(--line); border-radius: 22px;
+    background: color-mix(in srgb, var(--surface) 90%, transparent); backdrop-filter: blur(14px); box-shadow: var(--sh-soft); }
+  .tabbar button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 54px; min-width: 0;
+    border: 0; background: none; font: inherit; font-size: 11px; font-weight: 600; color: var(--muted); cursor: pointer; }
+  .tabbar svg { width: 22px; height: 22px; padding: 3px 14px; box-sizing: content-box; border-radius: 99px; fill: none; stroke: currentColor;
+    stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: background .2s; }
+  .tabbar button[aria-selected=true] { color: var(--accent-strong); }
+  .tabbar button[aria-selected=true] svg { background: var(--accent); color: var(--accent-fg); }
+
+  /* Fiche (espèce ou zone) */
+  #detail { position: fixed; inset: 0; z-index: 10; overflow-x: hidden; overflow-y: auto; display: none; }
+  #detail.open { display: block; }
+  #detailBody.slide .inner { animation: slidein .32s cubic-bezier(.2,.8,.2,1) both; }
+  .appbar { position: sticky; top: 0; z-index: 3; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--bg-0) 85%, transparent); backdrop-filter: blur(12px); }
+  .appbar > div { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 12px; padding: 10px 14px; }
+  .round { flex: none; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--line);
+    box-shadow: var(--sh-card); font: inherit; font-size: 20px; color: var(--ink); cursor: pointer; }
+  .appbar .ttl { font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .appbar .ttl small { display: block; font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  .hero { display: flex; gap: 16px; align-items: center; }
+  .hero h1 { margin: 0; }
+  .hero .en { color: var(--muted); font-size: 14px; margin-bottom: 6px; }
+  .stat { display: grid; grid-template-columns: 44px 34px 1fr; align-items: center; gap: 10px; font-size: 13.5px; padding: 3px 0; }
+  .stat span { color: var(--muted); font-weight: 600; } .stat b { text-align: right; font-variant-numeric: tabular-nums; }
+  .sbar { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+  .sbar i { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
+  .sbar i.hi { background: var(--ok); }
+  .total { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 13.5px; color: var(--muted); }
+  .total b { font-size: 17px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .state { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 10px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); }
+  .dot.save { background: var(--ok); } .dot.manual { background: var(--warn); } .dot.miss { background: var(--ko); }
+  .enc { display: flex; align-items: center; gap: 10px; padding: 10px 2px; min-height: 56px; cursor: pointer; }
+  .enc + .enc { border-top: 1px solid var(--line); }
+  .enc .main { flex: 1; min-width: 0; }
+  .enc .z { font-weight: 650; color: var(--accent-strong); }
+  .enc .m { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .enc .rate { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; font-size: 17px; white-space: nowrap; }
+  .enc .rate small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); white-space: normal; max-width: 9em; margin-left: auto; }
+  .enc.off { opacity: .5; }
+  a.link { color: var(--accent-strong); cursor: pointer; font-weight: 600; text-decoration: none; }
+  details summary { cursor: pointer; padding: 10px 4px; min-height: 44px; font-weight: 600; color: var(--accent-strong); }
+
+  /* Zones */
+  .ctxrow { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: end; margin-bottom: 12px; }
+  .ctxrow .field { flex: 1 1 200px; margin: 0; }
+  .zone .ord { width: 28px; height: 28px; flex: none; border-radius: 8px; display: grid; place-items: center; font-size: 11.5px; font-weight: 700;
+    background: var(--surface-2); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .zone .zm { height: 6px; border-radius: 99px; background: var(--surface-2); overflow: hidden; margin-top: 7px; }
+  .zone .zm i { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+  .zone .cnt { font-weight: 750; font-variant-numeric: tabular-nums; font-size: 15px; min-width: 46px; text-align: right; }
+  .zone.done .ord { background: var(--ok-bg); color: var(--ok); }
+  .zone.done .zm i { background: var(--ok); }
+  .zone.done .cnt { color: var(--ok); }
+  .zone.none .cnt { color: var(--muted); font-weight: 600; }
+
+  /* Tableaux */
+  .scrollx { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+  th { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  th, td { border-bottom: 1px solid var(--line); padding: 7px 6px; text-align: left; } tr:last-child td { border-bottom: 0; }
+  td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* Simulateur */
+  .rhead { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .rhead b { flex: 1; }
+  .grid6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .grid6 label { font-size: .75rem; color: var(--muted); text-align: center; font-weight: 600; }
+  .grid6 input { width: 100%; padding: 0 2px; text-align: center; }
+
+  /* Écran large (tablette en plein écran, ou moitié d'écran tablette en portrait) : 2 colonnes */
+  @media (min-width: 760px) {
+    main, .inner, .appbar > div { max-width: 1200px; }
+    .card.list { display: grid; grid-template-columns: 1fr 1fr; column-gap: 12px; }
+    .card.list > p { grid-column: 1 / -1; }
+    .card.list .row { box-shadow: none; }
+    .card.list .row:nth-child(n+3) { box-shadow: 0 -1px 0 var(--line); }
+    .filters { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: end; }
+    .filters .search, .actives { grid-column: 1 / -1; }
+    .filters .seg, .fields { margin-top: 0; }
+    .actives { margin-top: 2px; }
+    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; margin-bottom: 12px; }
+    .pair > .card { margin-bottom: 0; }
+    .encs { display: grid; grid-template-columns: 1fr 1fr; column-gap: 28px; }
+    .encs .enc { border-top: 0; }
+    .encs .enc:nth-child(n+3) { border-top: 1px solid var(--line); }
+  }
+  /* Très large : recherche, statut de capture, type et tri sur une seule ligne */
+  @media (min-width: 1100px) {
+    .filters { grid-template-columns: 1.3fr 1fr 1.2fr; }
+    .filters .search { grid-column: auto; }
+  }
+  /* Peu de hauteur (moitié d'écran en haut/bas, téléphone en paysage) : on rend la place à la liste */
+  @media (max-height: 700px) {
+    .filters { position: static; }
+    .top { padding: 2px 4px 8px; }
+    h1 { font-size: 24px; }
+    main, .inner { padding-bottom: 80px; }
+    .tabbar { bottom: calc(6px + env(safe-area-inset-bottom, 0px)); padding: 4px; border-radius: 18px; }
+    .tabbar button { min-height: 44px; gap: 0; font-size: 10px; }
+    .tabbar svg { width: 20px; height: 20px; padding: 2px 12px; }
+  }
+
+  @keyframes enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes slidein { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .enter, #detailBody.slide .inner { animation: none; } .switch i, .switch i::after, .tabbar svg { transition: none; } }
 </style>
 </head>
 <body>
-<header><nav id="nav" role="tablist">
-  <button role="tab" data-tab="dex">Pokédex</button>
-  <button role="tab" data-tab="zones">Zones</button>
-  <button role="tab" data-tab="sim">Simulateur</button>
-  <button role="tab" data-tab="save">Sauvegarde</button>
-  <button role="tab" data-tab="settings">Réglages</button>
-</nav></header>
+<div class="bg-layer"></div>
 <main id="view"></main>
-<div id="detail"><div class="inner" id="detailBody"></div></div>
+<div id="detail"><div id="detailBody"></div></div>
+<nav id="nav" class="tabbar" role="tablist">
+  <button role="tab" data-tab="dex"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h5.5M15 12h5.5"/><circle cx="12" cy="12" r="3"/></svg>Pokédex</button>
+  <button role="tab" data-tab="zones"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21z"/><circle cx="12" cy="10" r="2.4"/></svg>Zones</button>
+  <button role="tab" data-tab="sim"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10M5 6V4M12 20v-6M12 10V4M19 20v-3M19 13V4"/><path d="M3 10h4M10 14h4M17 13h4"/></svg>Simulateur</button>
+  <button role="tab" data-tab="save"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M12 10v7M9 14l3 3 3-3"/></svg>Sauvegarde</button>
+  <button role="tab" data-tab="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>Réglages</button>
+</nav>
 
 <script>
 // Logique du MVP : lecture d'une sauvegarde B2W2 (.dsv DraStic ou .sav brut).
@@ -502,92 +696,164 @@ const isCaught = (id) => L.captureInfo(id, S.save, S.manual).caught;
 const currentSeason = () => (S.season === "auto" ? L.seasonForDate(new Date()) : S.season);
 const nameOf = (id) => (SPECIES.get(id) ? SPECIES.get(id).fr : "#" + id);
 
+// --- Habillage commun -----------------------------------------------------------------------
+const TYPE_COLOR = { Normal: "#a8a77a", Feu: "#ee8130", Eau: "#6390f0", "Électrik": "#e3b70f", Plante: "#5fae35", Glace: "#5cc4c0",
+  Combat: "#c22e28", Poison: "#a33ea1", Sol: "#c9a13e", Vol: "#8d6ff0", Psy: "#f95587", Insecte: "#94a614", Roche: "#b6a136",
+  Spectre: "#735797", Dragon: "#6f35fc", "Ténèbres": "#705746", Acier: "#8f8fb0", "Fée": "#d685ad" };
+const typeColor = (t) => TYPE_COLOR[t] || "#8a8f9c";
+const typeChip = (t) => `<span class="chip" style="--t:${typeColor(t)}">${esc(t)}</span>`;
+const typeChips = (s) => s.types.map(typeChip).join("");
+
+const pageHead = (title, sub) => `<header class="top"><div class="eyebrow">Blaze Black 2 Redux · Challenge</div><h1>${title}</h1><div class="sub" id="pageSub">${sub}</div></header>`;
+const saveDate = () => {
+  if (!S.save) return "aucune sauvegarde importée";
+  const d = new Date(S.save.fileModified || S.save.importedAt);
+  return "sauvegarde du " + d.toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+};
+// Apparition échelonnée des premières lignes d'une liste (à l'ouverture d'un onglet seulement).
+const enterAttr = (i) => (i < 14 ? ` enter" style="--d:${i * 35}ms` : "");
+
 function mark(id) {
   const c = L.captureInfo(id, S.save, S.manual);
   if (c.caught) return c.origin === "save" ? '<span class="mark save" title="Capturé (sauvegarde)">✓</span>' : '<span class="mark manual" title="Capturé (à la main)">✓*</span>';
   return c.origin === "manual" ? '<span class="mark miss" title="Non capturé (forcé à la main)">✗*</span>' : '<span class="mark"></span>';
 }
-const typeChips = (s) => s.types.map((t) => `<span class="chip">${esc(t)}</span>`).join("");
+// Disque aux couleurs des types ; la pastille reprend les marques ✓ / ✓* / ✗*.
+function ball(s, big) {
+  const c = L.captureInfo(s.id, S.save, S.manual);
+  const badge = c.caught ? (c.origin === "save" ? '<span class="badge save" title="Capturé (sauvegarde)">✓</span>' : '<span class="badge manual" title="Capturé (à la main)">✓*</span>')
+    : c.origin === "manual" ? '<span class="badge miss" title="Non capturé (forcé à la main)">✗*</span>' : "";
+  return `<span class="ball${c.caught ? "" : " miss"}${big ? " big" : ""}" style="--a:${typeColor(s.types[0])};--b:${typeColor(s.types[1] || s.types[0])}">${badge}</span>`;
+}
 
 // --- Pokédex --------------------------------------------------------------------------------
+const CAUGHT_FR = { all: "Tous", caught: "Capturés", missing: "À capturer" };
 function viewDex() {
   const d = S.dex;
-  $("view").innerHTML = `
-    <div class="bar">
-      <input id="q" type="search" placeholder="Rechercher (FR ou EN, sans accents)" value="${esc(d.query)}" style="flex-basis:100%">
-      <select id="type"><option value="">Tous les types</option>${TYPES.map((t) => `<option ${d.type === t ? "selected" : ""}>${esc(t)}</option>`).join("")}</select>
-      <select id="caught"><option value="all">Tous</option><option value="caught">Capturés</option><option value="missing">Non capturés</option></select>
-      <select id="sort"><option value="id">Tri : numéro</option><option value="total">Tri : total</option>${L.STAT_LABELS.map((l, i) => `<option value="${i}">Tri : ${l}</option>`).join("")}</select>
-      <button class="btn" id="desc" aria-pressed="${d.desc}">${d.desc ? "Décroissant" : "Croissant"}</button>
+  $("view").innerHTML = `${pageHead("Pokédex", "")}
+    <div class="meter" style="margin:-4px 4px 14px"><i id="dexMeter"></i></div>
+    <div class="filters">
+      <label class="search"><span aria-hidden="true">⌕</span><input id="q" type="search" placeholder="Rechercher (FR ou EN, sans accents)" value="${esc(d.query)}" aria-label="Rechercher"></label>
+      <div class="seg" id="caughtSeg">${Object.entries(CAUGHT_FR).map(([v, t]) => `<button data-act="dexCaught" data-v="${v}" aria-pressed="${d.caught === v}">${t}</button>`).join("")}</div>
+      <div class="fields">
+        <label class="field"><small>Type</small><select id="type"><option value="">Tous</option>${TYPES.map((t) => `<option ${d.type === t ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></label>
+        <label class="field"><small>Trier par</small><select id="sort"><option value="id">Numéro</option><option value="total">Total</option>${L.STAT_LABELS.map((l, i) => `<option value="${i}">${l}</option>`).join("")}</select></label>
+        <button class="btn" id="desc" aria-pressed="${d.desc}" title="${d.desc ? "Décroissant" : "Croissant"}" aria-label="${d.desc ? "Ordre décroissant" : "Ordre croissant"}">${d.desc ? "↓" : "↑"}</button>
+      </div>
+      <div class="actives" id="actives"></div>
     </div>
-    <div class="muted" id="count"></div>
-    <div class="card" id="list" style="padding:4px 8px"></div>
-    <p class="muted">✓ capturé d'après la sauvegarde · ✓* coché à la main · ✗* forcé « non capturé » à la main.</p>`;
-  $("caught").value = d.caught; $("sort").value = String(d.sort);
-  const upd = () => { d.query = $("q").value; d.type = $("type").value; d.caught = $("caught").value;
+    <div class="count" id="count"></div>
+    <div class="card list" id="list"></div>
+    <p class="foot">✓ capturé d'après la sauvegarde · ✓* coché à la main · ✗* forcé « non capturé » à la main.</p>`;
+  $("sort").value = String(d.sort);
+  const upd = () => { d.query = $("q").value; d.type = $("type").value;
     d.sort = $("sort").value === "id" || $("sort").value === "total" ? $("sort").value : Number($("sort").value); listDex(); };
-  ["q", "type", "caught", "sort"].forEach((id) => $(id).addEventListener("input", upd));
+  ["q", "type", "sort"].forEach((id) => $(id).addEventListener("input", upd));
   $("desc").addEventListener("click", () => { d.desc = !d.desc; viewDex(); });
-  listDex();
+  listDex(true);
 }
-function listDex() {
-  const list = L.filterSpecies(DATA.species, S.dex, isCaught);
+function listDex(animate) {
+  const d = S.dex, list = L.filterSpecies(DATA.species, d, isCaught);
   const caught = DATA.species.filter((s) => isCaught(s.id)).length;
-  $("count").textContent = `${list.length} affichés · ${caught} / ${DATA.species.length} capturés`;
-  $("list").innerHTML = list.map((s) => `<div class="row" data-act="species" data-id="${s.id}">
-    <span class="num">${s.id}</span>${mark(s.id)}
-    <div class="main"><b>${esc(s.fr)}</b> <span class="muted">${esc(s.en)}</span><div class="sub">${typeChips(s)} ${s.stats.join("/")} · total ${s.total}</div></div></div>`).join("") || '<p class="muted">Aucun résultat.</p>';
+  $("pageSub").innerHTML = `<b>${caught}</b> / ${DATA.species.length} capturés · ${esc(saveDate())}`;
+  $("dexMeter").style.width = (100 * caught / DATA.species.length).toFixed(1) + "%";
+  $("type").classList.toggle("active", !!d.type);
+  const chips = [];
+  if (d.query) chips.push(["query", `Recherche : « ${esc(d.query)} »`]);
+  if (d.type) chips.push(["type", `Type : ${esc(d.type)}`]);
+  if (d.caught !== "all") chips.push(["caught", CAUGHT_FR[d.caught]]);
+  $("actives").innerHTML = chips.map(([k, t]) => `<button class="pill" data-act="unfilter" data-k="${k}" aria-label="Retirer le filtre ${t}">${t} <i>✕</i></button>`).join("")
+    + (chips.length > 1 ? '<button class="linkbtn" data-act="resetDex">Tout réinitialiser</button>' : "");
+  const here = list.filter((s) => isCaught(s.id)).length;
+  $("count").innerHTML = `<span><b>${list.length}</b> affichés sur ${DATA.species.length}</span><span>${here} capturés ici</span>`;
+  const statInfo = (s) => (typeof d.sort === "number" ? `<b>${L.STAT_LABELS[d.sort]} ${s.stats[d.sort]}</b> · total ${s.total}` : `total ${s.total}`);
+  $("list").innerHTML = list.map((s, i) => `<div class="row${animate ? enterAttr(i) : ""}" data-act="species" data-id="${s.id}">
+    ${ball(s)}<div class="main"><div class="name">${esc(s.fr)}<small>${esc(s.en)}</small></div><div class="meta">${typeChips(s)} · ${statInfo(s)}</div></div>
+    <span class="no">#${s.id}</span><span class="chev" aria-hidden="true">›</span></div>`).join("") || '<p class="muted" style="padding:10px">Aucun résultat.</p>';
 }
 
-function openDetail(html) { $("detailBody").innerHTML = html; $("detail").classList.add("open"); $("detail").scrollTop = 0; }
-function closeDetail() { $("detail").classList.remove("open"); }
-const backBtn = '<button class="btn" data-act="close">← Retour</button>';
+// --- Fiches : pile des fiches ouvertes, synchronisée avec le bouton Retour d'Android ---------
+const STACK = []; // fonctions d'affichage des fiches ouvertes ; la dernière est visible
+function openDetail(small, title, html) {
+  $("detailBody").innerHTML = `<div class="appbar"><div><button class="round" data-act="close" aria-label="Retour">←</button>
+    <div class="ttl"><small>${small}</small>${title}</div></div></div><div class="inner">${html}</div>`;
+  $("detail").classList.add("open");
+}
+function pushDetail(render) {
+  STACK.push(render); history.pushState({ detail: STACK.length }, "");
+  render(); $("detail").scrollTop = 0;
+  const b = $("detailBody"); b.classList.remove("slide"); void b.offsetWidth; b.classList.add("slide");
+}
+function popDetail() {
+  STACK.pop();
+  if (STACK.length) { STACK[STACK.length - 1](); $("detail").scrollTop = 0; return; }
+  $("detail").classList.remove("open");
+  if (S.tab === "dex") listDex(); else if (S.tab === "zones") listZones();
+}
+window.addEventListener("popstate", () => { if (STACK.length) popDetail(); });
+function closeAllDetails() {
+  if (STACK.length) { const n = STACK.length; STACK.length = 0; history.go(-n); }
+  $("detail").classList.remove("open");
+}
 
 function detailSpecies(id) {
   const s = SPECIES.get(id), c = L.captureInfo(id, S.save, S.manual), st = L.manualState(S.manual, id);
-  const origin = c.caught ? (c.origin === "save" ? "capturé d'après la sauvegarde" : "capturé (coché à la main)")
-    : c.origin === "manual" ? `non capturé (forcé à la main${c.inGame ? " ; la sauvegarde dit capturé" : ""})` : "non capturé";
+  const origin = c.caught ? (c.origin === "save" ? "Capturé d'après la sauvegarde" : "Capturé (coché à la main)")
+    : c.origin === "manual" ? `Non capturé (forcé à la main${c.inGame ? " ; la sauvegarde dit capturé" : ""})` : "Non capturé";
+  const dot = c.caught ? (c.origin === "save" ? "save" : "manual") : c.origin === "manual" ? "miss" : "";
+  const best = Math.max(...s.stats), season = currentSeason();
   const w = L.whereToFind(id, DATA.zones, S.showSpoilers);
-  const rows = w.found.map((f) => `<tr><td>${esc(LABELS[f.zone.id])}</td><td>${esc(L.METHOD_FR[f.method] || f.method)}${f.variant && f.variant !== "Normal" ? ` <span class="muted">(${esc(f.variant)})</span>` : ""}</td>
-    <td>${esc(L.seasonsText(f.seasons))}</td><td>${esc(L.levelText(f.min, f.max))}${f.form ? ` <span class="muted">(${esc(f.form)})</span>` : ""}</td>
-    <td class="r">${f.rate === null ? "—" : f.rate + " %"}${f.event ? ` <span class="chip">${esc(f.event)}</span>` : ""}</td></tr>`).join("");
+  const enc = w.found.map((f) => {
+    const off = f.seasons && !f.seasons.includes(season);
+    const variant = f.variant && f.variant !== "Normal" ? ` · ${esc(f.variant)}` : "";
+    return `<div class="enc${off ? " off" : ""}" data-act="zone" data-id="${esc(f.zone.id)}">
+      <div class="main"><div class="z">${esc(LABELS[f.zone.id])} ›</div>
+      <div class="m">${esc(L.METHOD_FR[f.method] || f.method)}${variant} · ${esc(L.levelText(f.min, f.max))}${f.form ? ` (${esc(f.form)})` : ""}${off ? ' · <span class="chip season">hors saison</span>' : ""}${f.event ? ` <span class="chip">${esc(f.event)}</span>` : ""}</div></div>
+      <div class="rate">${f.rate === null ? "—" : f.rate + " %"}<small>${esc(L.seasonsText(f.seasons).toLowerCase())}</small></div></div>`;
+  }).join("");
   const tierFr = { common: "commune", uncommon: "peu commune", rare: "rare" };
-  const g = w.grottos.map((x) => `<li>${esc(LABELS[x.zone.id])} – Trouée Cachée « ${esc(x.grotto)} » (${tierFr[x.tier]})</li>`).join("");
-  openDetail(`${backBtn}
-    <h1>#${s.id} ${esc(s.fr)} <span class="muted">${esc(s.en)}</span></h1>
-    <div class="card">${typeChips(s)}
-      <table style="margin-top:8px"><tr>${L.STAT_LABELS.map((l) => `<th class="r">${l}</th>`).join("")}<th class="r">Total</th></tr>
-      <tr>${s.stats.map((v) => `<td class="r">${v}</td>`).join("")}<td class="r"><b>${s.total}</b></td></tr></table></div>
-    <div class="card"><b>Capture</b> : ${origin}
-      <div class="seg" style="margin-top:8px" data-id="${id}">
+  const g = w.grottos.map((x) => `<div class="enc" data-act="zone" data-id="${esc(x.zone.id)}"><div class="main"><div class="z">${esc(LABELS[x.zone.id])} ›</div>
+    <div class="m">Trouée Cachée « ${esc(x.grotto)} » · ${tierFr[x.tier]}</div></div></div>`).join("");
+  openDetail(`#${s.id} · Pokédex`, esc(s.fr), `
+    <div class="card hero">${ball(s, true)}<div><h1>${esc(s.fr)}</h1><div class="en">${esc(s.en)}</div>${typeChips(s)}</div></div>
+    <div class="pair"><div class="card"><h2>Statistiques de base</h2>
+      ${s.stats.map((v, i) => `<div class="stat"><span>${L.STAT_LABELS[i]}</span><b>${v}</b><div class="sbar"><i class="${v === best ? "hi" : ""}" style="width:${Math.min(100, v / 1.8).toFixed(0)}%"></i></div></div>`).join("")}
+      <div class="total"><span>Total</span><b>${s.total}</b></div></div>
+    <div class="card"><h2>Capture</h2>
+      <div class="state"><span class="dot ${dot}"></span>${origin}</div>
+      <div class="seg" data-id="${id}">
         ${[["auto", "Auto"], ["caught", "Capturé"], ["missing", "Non capturé"]].map(([v, t]) => `<button data-act="manual" data-state="${v}" aria-pressed="${st === v}">${t}</button>`).join("")}
-      </div><div class="muted">« Auto » suit la sauvegarde ; les deux autres choix sont des corrections manuelles.</div></div>
-    <h2>Où le trouver</h2>
-    ${rows ? `<div class="card" style="overflow-x:auto"><table><tr><th>Zone</th><th>Méthode</th><th>Saison</th><th>Niveau</th><th class="r">Taux</th></tr>${rows}</table></div>` : '<p class="muted">Aucune rencontre sauvage répertoriée (hors zones masquées).</p>'}
-    ${g ? `<h3>Trouées Cachées</h3><ul>${g}</ul>` : ""}
-    ${S.showSpoilers ? "" : '<p class="muted">Les zones de fin de partie sont masquées (réglage dans « Réglages »).</p>'}`);
+      </div><div class="help">« Auto » suit la sauvegarde ; les deux autres choix sont des corrections manuelles.</div></div></div>
+    <div class="card"><h2>Où le trouver${w.found.length ? ` · ${w.found.length} rencontre${w.found.length > 1 ? "s" : ""}` : ""}</h2>
+      ${enc ? `<div class="encs">${enc}</div>` : '<p class="muted" style="margin:0">Aucune rencontre sauvage répertoriée (hors zones masquées).</p>'}</div>
+    ${g ? `<div class="card"><h2>Trouées Cachées</h2>${g}</div>` : ""}
+    ${S.showSpoilers ? "" : '<p class="foot">Les zones de fin de partie sont masquées (réglage dans « Réglages »).</p>'}`);
 }
 
 // --- Zones ----------------------------------------------------------------------------------
 function viewZones() {
-  const season = currentSeason();
-  $("view").innerHTML = `
-    <div class="bar">
-      <select id="season">${[["auto", `Saison : automatique (${L.SEASON_FR[L.seasonForDate(new Date())]})`], ...L.SEASONS.map((x) => [x, "Saison : " + L.SEASON_FR[x]])].map(([v, t]) => `<option value="${v}" ${S.season === v ? "selected" : ""}>${esc(t)}</option>`).join("")}</select>
-      <label class="chk"><input type="checkbox" id="rem" ${S.onlyRemaining ? "checked" : ""}> Reste à capturer</label>
+  $("view").innerHTML = `${pageHead("Zones", "")}
+    <div class="ctxrow">
+      <label class="field"><small>Saison</small><select id="season">${[["auto", `Automatique (${L.SEASON_FR[L.seasonForDate(new Date())]})`], ...L.SEASONS.map((x) => [x, L.SEASON_FR[x]])].map(([v, t]) => `<option value="${v}" ${S.season === v ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></label>
+      <label class="switch"><input type="checkbox" id="rem" ${S.onlyRemaining ? "checked" : ""}><i></i>Reste à capturer</label>
     </div>
-    <div class="card" id="zlist" style="padding:4px 8px"></div>
-    <p class="muted">Compteur = espèces différentes rencontrées dans la zone (Trouées Cachées non comptées). Saison actuelle : ${esc(L.SEASON_FR[season])}.</p>`;
+    <div class="card list" id="zlist"></div>
+    <p class="foot">Compteur = espèces différentes rencontrées dans la zone (Trouées Cachées non comptées).</p>`;
+  $("season").classList.toggle("active", S.season !== "auto");
   $("season").addEventListener("input", () => { S.season = $("season").value; persist(); viewZones(); });
-  $("rem").addEventListener("input", () => { S.onlyRemaining = $("rem").checked; listZones(); });
-  listZones();
+  $("rem").addEventListener("input", () => { S.onlyRemaining = $("rem").checked; listZones(true); });
+  listZones(true);
 }
-function listZones() {
+function listZones(animate) {
   const rows = L.visibleZones(DATA.zones, { showSpoilers: S.showSpoilers, onlyRemaining: S.onlyRemaining }, isCaught);
-  $("zlist").innerHTML = rows.map(({ zone, counts }) => `<div class="row" data-act="zone" data-id="${zone.id}">
-    <div class="main"><b>${esc(LABELS[zone.id])}</b> <span class="muted">${esc(zone.en)}</span>
-    <div class="prog"><i style="width:${counts.present ? Math.round(100 * counts.caught / counts.present) : 0}%"></i></div></div>
-    <span class="${counts.remaining ? "" : "ok"}"><b>${counts.caught}/${counts.present}</b></span></div>`).join("") || '<p class="muted">Aucune zone à afficher.</p>';
+  $("pageSub").innerHTML = `<b>${rows.length}</b> zones dans l'ordre de l'aventure · saison : <b>${esc(L.SEASON_FR[currentSeason()])}</b>`;
+  $("zlist").innerHTML = rows.map(({ zone, counts }, i) => {
+    const done = counts.present > 0 && !counts.remaining, pct = counts.present ? Math.round(100 * counts.caught / counts.present) : 0;
+    return `<div class="row zone${done ? " done" : ""}${counts.caught ? "" : " none"}${animate ? enterAttr(i) : ""}" data-act="zone" data-id="${esc(zone.id)}">
+      <span class="ord">${done ? "✓" : zone.order}</span>
+      <div class="main"><div class="name">${esc(LABELS[zone.id])}<small>${esc(zone.en)}</small></div><div class="zm"><i style="width:${pct}%"></i></div></div>
+      <span class="cnt">${counts.caught}/${counts.present}</span><span class="chev" aria-hidden="true">›</span></div>`;
+  }).join("") || '<p class="muted" style="padding:10px">Aucune zone à afficher.</p>';
 }
 
 function detailZone(id) {
@@ -598,16 +864,17 @@ function detailZone(id) {
     <table><tr><th></th><th>Pokémon</th><th>Niveau</th><th class="r">Taux</th></tr>
     ${t.enc.map((e) => `<tr><td>${mark(e[0])}</td><td><a class="link" data-act="species" data-id="${e[0]}">${esc(nameOf(e[0]))}</a>${e[1] ? ` <span class="muted">(${esc(e[1])})</span>` : ""}</td>
       <td>${esc(L.levelText(e[2], e[3]))}</td><td class="r">${e[4] === null ? "—" : e[4] + " %"}${e[5] ? ` <span class="chip">${esc(e[5])}</span>` : ""}</td></tr>`).join("")}</table>`).join("");
-  const block = (sec) => `<div class="card"><b>${esc(L.seasonsText(sec.seasons))}</b>${sec.part === "postgame" ? ' <span class="chip">après la Ligue</span>' : ""}${table(sec)}</div>`;
+  const block = (sec) => `<div class="card"><h2>${esc(L.seasonsText(sec.seasons))}${sec.part === "postgame" ? ' <span class="chip season">après la Ligue</span>' : ""}</h2>${table(sec)}</div>`;
   const cur = secs.filter((s) => s.current), oth = secs.filter((s) => !s.current);
   const tierFr = { common: "Commune", uncommon: "Peu commune", rare: "Rare" };
-  const grottos = zone.grottos.map((g) => `<div class="card"><b>Trouée Cachée : ${esc(g.name)}</b>
+  const grottos = zone.grottos.map((g) => `<div class="card"><h2>Trouée Cachée : ${esc(g.name)}</h2>
     ${g.notes.map((n) => `<div class="muted">${esc(n)}</div>`).join("")}
-    ${["common", "uncommon", "rare"].map((k) => g[k].length ? `<div>${tierFr[k]} : ${g[k].map((e) => `<a class="link" data-act="species" data-id="${e[0]}">${esc(nameOf(e[0]))}</a>${isCaught(e[0]) ? " ✓" : ""}`).join(", ")}</div>` : "").join("")}</div>`).join("");
-  const counts = L.zoneCounts(zone, isCaught, S.showSpoilers);
-  openDetail(`${backBtn}
-    <h1>${esc(LABELS[zone.id])} <span class="muted">${esc(zone.en)}</span></h1>
-    <p>${counts.caught} / ${counts.present} capturés · saison actuelle : <b>${esc(L.SEASON_FR[season])}</b></p>
+    ${["common", "uncommon", "rare"].map((k) => g[k].length ? `<div style="margin-top:4px"><b>${tierFr[k]}</b> : ${g[k].map((e) => `<a class="link" data-act="species" data-id="${e[0]}">${esc(nameOf(e[0]))}</a>${isCaught(e[0]) ? ' <span class="ok">✓</span>' : ""}`).join(", ")}</div>` : "").join("")}</div>`).join("");
+  const counts = L.zoneCounts(zone, isCaught, S.showSpoilers), pct = counts.present ? Math.round(100 * counts.caught / counts.present) : 0;
+  openDetail(`Zone · ${esc(zone.en)}`, esc(LABELS[zone.id]), `
+    <header class="top"><h1>${esc(LABELS[zone.id])}</h1>
+      <div class="sub"><b>${counts.caught}</b> / ${counts.present} capturés · saison actuelle : <b>${esc(L.SEASON_FR[season])}</b></div>
+      <div class="meter"><i style="width:${pct}%"></i></div></header>
     ${cur.map(block).join("") || '<p class="muted">Aucune rencontre répertoriée pour cette saison.</p>'}
     ${oth.length ? `<details><summary>Autres saisons (${oth.length})</summary>${oth.map(block).join("")}</details>` : ""}
     ${grottos}`);
@@ -616,21 +883,21 @@ function detailZone(id) {
 // --- Sauvegarde -----------------------------------------------------------------------------
 function viewSave() {
   const sv = S.save;
-  const rows = (list, kind) => list.map((p, n) => `<tr><td>${p.box ? "B" + p.box + "-" + p.slot : ""}</td><td>#${p.species} ${esc(nameOf(p.species))}${p.nickname && p.nickname !== nameOf(p.species) ? ` <span class="muted">« ${esc(p.nickname)} »</span>` : ""}</td>
+  const rows = (list, kind) => list.map((p, n) => `<tr><td>${p.box ? "B" + p.box + "-" + p.slot : ""}</td><td><a class="link" data-act="species" data-id="${p.species}">#${p.species} ${esc(nameOf(p.species))}</a>${p.nickname && p.nickname !== nameOf(p.species) ? ` <span class="muted">« ${esc(p.nickname)} »</span>` : ""}</td>
     <td>${p.level ?? ""}</td><td>${natureHtml(p.nature)}</td><td>${SAVE_KEYS.map((k) => p.ivs[k]).join("/")}</td><td>${p.stats ? SAVE_KEYS.map((k) => p.stats[k]).join("/") : ""}</td>
-    <td><button class="btn" data-act="check" data-kind="${kind}" data-n="${n}">Vérifier</button></td></tr>`).join("");
+    <td><button class="btn small" data-act="check" data-kind="${kind}" data-n="${n}">Vérifier</button></td></tr>`).join("");
   const head = "<tr><th></th><th>Espèce</th><th>Niv.</th><th>Nature</th><th>IV PV/Atq/Déf/AtqS/DéfS/Vit</th><th>Stats</th><th></th></tr>";
-  $("view").innerHTML = `
-    <div class="card"><b>Importer le .dsv de DraStic</b><br><input type="file" id="file" style="margin-top:8px; width:100%">
-      <div class="muted">Le fichier est lu sur cet appareil, il n'est envoyé nulle part.</div><div id="err" class="ko"></div></div>
-    ${sv ? `<div class="card"><b>${esc(sv.trainer)}</b> – ${esc(sv.name)}<br>
-      <span class="muted">Importé le ${esc(new Date(sv.importedAt).toLocaleString("fr-FR"))}${sv.fileModified ? " · fichier modifié le " + esc(new Date(sv.fileModified).toLocaleString("fr-FR")) : ""}</span>
-      <p class="ok" style="margin:6px 0"><b>${sv.caught.length}</b> espèces capturées</p>
+  $("view").innerHTML = `${pageHead("Sauvegarde", sv ? `<b>${esc(sv.trainer)}</b> · <b>${sv.caught.length}</b> espèces capturées` : "Aucune sauvegarde importée")}
+    <div class="card"><h2>Importer le .dsv de DraStic</h2><input type="file" id="file" style="width:100%">
+      <div class="help">Le fichier est lu sur cet appareil, il n'est envoyé nulle part.</div><div id="err" class="ko"></div></div>
+    ${sv ? `<div class="card"><h2>Sauvegarde importée</h2><b>${esc(sv.trainer)}</b> – ${esc(sv.name)}<br>
+      <span class="muted">Importée le ${esc(new Date(sv.importedAt).toLocaleString("fr-FR"))}${sv.fileModified ? " · fichier modifié le " + esc(new Date(sv.fileModified).toLocaleString("fr-FR")) : ""}</span>
+      <p class="ok" style="margin:6px 0 0"><b>${sv.caught.length}</b> espèces capturées</p>
       ${sv.invalid ? `<p class="ko">${sv.invalid} Pokémon avec somme de contrôle invalide.</p>` : ""}</div>
-      <h2>Équipe (${sv.party.length})</h2><div class="card" style="overflow-x:auto"><table>${head}${rows(sv.party, "party")}</table></div>
-      <h2>Boîtes (${sv.boxes.length})</h2><div class="card" style="overflow-x:auto"><table>${head}${rows(sv.boxes, "boxes")}</table></div>
-      <p class="muted">« Vérifier » ouvre le simulateur prérempli : la fourchette calculée doit contenir les IVs lus dans la sauvegarde. Les Pokémon des boîtes n'ont ni niveau ni stats dans le fichier : à saisir.</p>`
-      : '<p class="muted">Aucune sauvegarde importée.</p>'}`;
+      <div class="card"><h2>Équipe (${sv.party.length})</h2><div class="scrollx"><table>${head}${rows(sv.party, "party")}</table></div></div>
+      <div class="card"><h2>Boîtes (${sv.boxes.length})</h2><div class="scrollx"><table>${head}${rows(sv.boxes, "boxes")}</table></div></div>
+      <p class="foot">« Vérifier » ouvre le simulateur prérempli : la fourchette calculée doit contenir les IVs lus dans la sauvegarde. Les Pokémon des boîtes n'ont ni niveau ni stats dans le fichier : à saisir.</p>`
+      : ""}`;
   $("file").addEventListener("change", async (e) => {
     const f = e.target.files[0];
     if (!f) return;
@@ -676,7 +943,7 @@ const simBase = () => {
 
 function viewSim() {
   const sm = S.sim, sp = SPECIES.get(sm.id);
-  $("view").innerHTML = `
+  $("view").innerHTML = `${pageHead("Simulateur d'IV", "Fourchettes d'IV à partir des stats affichées en jeu")}
     <div class="card">
       <label class="field"><span>Espèce (nom FR ou EN, ou numéro)</span>
         <input id="simSp" list="spList" autocomplete="off" value="${sp ? esc(sp.id + " " + sp.fr) : ""}" placeholder="Roucool"></label>
@@ -688,15 +955,15 @@ function viewSim() {
       ${sm.note ? `<div class="muted warn">${esc(sm.note)}</div>` : ""}
     </div>
     ${sm.readings.map((r, n) => `<div class="card" data-reading="${n}">
-      <div class="row" style="cursor:default; padding-top:0"><b class="main">Relevé ${n + 1}</b>
-        ${sm.readings.length > 1 ? `<button class="btn" data-act="simDel" data-n="${n}">Retirer</button>` : ""}</div>
+      <div class="rhead"><b>Relevé ${n + 1}</b>
+        ${sm.readings.length > 1 ? `<button class="btn small" data-act="simDel" data-n="${n}">Retirer</button>` : ""}</div>
       <label class="field"><span>Niveau (1 à 100)</span><input type="number" inputmode="numeric" min="1" max="100" data-f="level" value="${esc(r.level)}"></label>
       <div class="grid6">${L.STAT_LABELS.map((l, i) => `<label>${l}<input type="number" inputmode="numeric" min="1" data-f="${i}" value="${esc(r.stats[i])}"></label>`).join("")}</div>
     </div>`).join("")}
     <div class="bar"><button class="btn" data-act="simAdd">+ Ajouter un relevé (autre niveau)</button>
       <button class="btn" data-act="simReset">Tout effacer</button></div>
     <div id="simOut"></div>
-    <p class="muted">Stats telles qu'affichées en jeu, EVs à 0. Chaque relevé à un niveau différent resserre les fourchettes. Puissance Cachée : règles de la 5e génération (Redux ne la modifie pas).</p>`;
+    <p class="foot">Stats telles qu'affichées en jeu, EVs à 0. Chaque relevé à un niveau différent resserre les fourchettes. Puissance Cachée : règles de la 5e génération (Redux ne la modifie pas).</p>`;
   fillSimForm();
   $("simSp").addEventListener("input", () => {
     const id = resolveSpecies($("simSp").value);
@@ -740,27 +1007,27 @@ function renderSimOut() {
   }).join("");
   const hp = sm.check && res.ok ? SIM.hiddenPowerType(sm.check) : null;
   out.innerHTML = `${hint}<div class="card">
-    <h2 style="margin-top:0">Fourchettes d'IV</h2>
+    <h2>Fourchettes d'IV</h2>
     <table><tr><th>Stat</th><th class="r">Base</th><th class="r">IV possibles</th></tr>${rows}</table>
     ${res.problems.map((p) => `<p class="ko">${esc(p)}</p>`).join("")}
     ${res.ok ? `<h3>Puissance Cachée possible (${res.hiddenPower.length})</h3>
-      <div>${res.hiddenPower.map((t) => `<span class="chip">${esc(t)}</span>`).join("")}</div>
-      ${hp ? `<div class="muted">Type réel d'après la sauvegarde : <b class="${res.hiddenPower.includes(hp) ? "ok" : "ko"}">${esc(hp)}</b></div>` : ""}` : ""}</div>`;
+      <div>${res.hiddenPower.map(typeChip).join("")}</div>
+      ${hp ? `<div class="muted" style="margin-top:6px">Type réel d'après la sauvegarde : <b class="${res.hiddenPower.includes(hp) ? "ok" : "ko"}">${esc(hp)}</b></div>` : ""}` : ""}</div>`;
 }
 
 // --- Réglages -------------------------------------------------------------------------------
 function viewSettings() {
   const n = Object.keys(S.manual).length;
-  $("view").innerHTML = `
-    <div class="card"><label class="chk"><input type="checkbox" id="spo" ${S.showSpoilers ? "checked" : ""}> Afficher les zones de fin de partie (spoilers)</label>
-      <div class="muted">Masquées par défaut : zones après la Ligue et Trouées Cachées qui s'y trouvent.</div></div>
-    <div class="card"><b>Corrections manuelles</b> : ${n}
-      <div class="bar" style="margin-top:8px"><button class="btn primary" id="exp">Exporter (JSON)</button>
+  $("view").innerHTML = `${pageHead("Réglages", `<b>${n}</b> correction${n > 1 ? "s" : ""} manuelle${n > 1 ? "s" : ""}`)}
+    <div class="card"><h2>Affichage</h2><label class="switch"><input type="checkbox" id="spo" ${S.showSpoilers ? "checked" : ""}><i></i>Afficher les zones de fin de partie (spoilers)</label>
+      <div class="help">Masquées par défaut : zones après la Ligue et Trouées Cachées qui s'y trouvent.</div></div>
+    <div class="card"><h2>Corrections manuelles · ${n}</h2>
+      <div class="bar"><button class="btn primary" id="exp">Exporter (JSON)</button>
       <button class="btn" id="impBtn">Importer (JSON)</button><input type="file" id="imp" accept=".json,application/json" hidden></div>
       <div id="msg" class="muted"></div>
       <button class="btn" id="clear" ${n ? "" : "disabled"}>Effacer les corrections</button></div>
     ${S.storage ? "" : '<p class="ko">Le stockage du navigateur est indisponible : rien ne sera conservé après fermeture.</p>'}
-    <p class="muted">Les corrections et la dernière sauvegarde importée sont gardées dans ce navigateur. Exportez régulièrement le JSON.</p>`;
+    <p class="foot">Les corrections et la dernière sauvegarde importée sont gardées dans ce navigateur. Exportez régulièrement le JSON.</p>`;
   $("spo").addEventListener("input", () => { S.showSpoilers = $("spo").checked; persist(); });
   $("exp").addEventListener("click", () => {
     const blob = new Blob([L.exportCorrections(S.manual, S.showSpoilers)], { type: "application/json" });
@@ -778,23 +1045,33 @@ function viewSettings() {
       $("msg").textContent = `${Object.keys(r.manual).length} corrections importées.`;
     } catch (err) { $("msg").className = "ko"; $("msg").textContent = err.message; }
   });
-  $("clear").addEventListener("click", () => { if (confirm("Effacer toutes les corrections manuelles ?")) { S.manual = {}; persist(); viewSettings(); } });
+  $("clear").addEventListener("click", () => {
+    if (confirm(`Effacer les ${n} corrections manuelles ?\n\nElles ne pourront être récupérées que depuis un export JSON.`)) { S.manual = {}; persist(); viewSettings(); }
+  });
 }
 
 // --- Navigation et clics -------------------------------------------------------------------
 const VIEWS = { dex: viewDex, zones: viewZones, sim: viewSim, save: viewSave, settings: viewSettings };
 function show(tab) {
-  S.tab = tab; closeDetail();
+  S.tab = tab; closeAllDetails();
   document.querySelectorAll("#nav button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === tab)));
   VIEWS[tab]();
+  window.scrollTo(0, 0);
 }
 document.addEventListener("click", (e) => {
   const t = e.target.closest("[data-act], #nav button");
   if (!t) return;
   if (t.dataset.tab) return show(t.dataset.tab);
-  if (t.dataset.act === "close") { closeDetail(); if (S.tab === "dex") listDex(); if (S.tab === "zones") listZones(); }
-  else if (t.dataset.act === "species") detailSpecies(Number(t.dataset.id));
-  else if (t.dataset.act === "zone") detailZone(t.dataset.id);
+  if (t.dataset.act === "close") history.back();
+  else if (t.dataset.act === "species") { const id = Number(t.dataset.id); pushDetail(() => detailSpecies(id)); }
+  else if (t.dataset.act === "zone") { const id = t.dataset.id; pushDetail(() => detailZone(id)); }
+  else if (t.dataset.act === "dexCaught") {
+    S.dex.caught = t.dataset.v;
+    document.querySelectorAll("#caughtSeg button").forEach((b) => b.setAttribute("aria-pressed", String(b === t)));
+    listDex();
+  }
+  else if (t.dataset.act === "unfilter") { const k = t.dataset.k; S.dex[k] = k === "caught" ? "all" : ""; viewDex(); }
+  else if (t.dataset.act === "resetDex") { Object.assign(S.dex, { query: "", type: "", caught: "all" }); viewDex(); }
   else if (t.dataset.act === "check") {
     const p = S.save[t.dataset.kind][Number(t.dataset.n)];
     S.sim = Object.assign(freshSim(), { id: p.species, nature: p.nature, check: SAVE_KEYS.map((k) => p.ivs[k]),
