@@ -617,9 +617,9 @@ function detailZone(id) {
 function viewSave() {
   const sv = S.save;
   const rows = (list, kind) => list.map((p, n) => `<tr><td>${p.box ? "B" + p.box + "-" + p.slot : ""}</td><td>#${p.species} ${esc(nameOf(p.species))}${p.nickname && p.nickname !== nameOf(p.species) ? ` <span class="muted">« ${esc(p.nickname)} »</span>` : ""}</td>
-    <td>${p.level ?? ""}</td><td>${esc(p.natureName)}</td><td>${BB2.STAT_KEYS.map((k) => p.ivs[k]).join("/")}</td><td>${p.stats ? BB2.STAT_KEYS.map((k) => p.stats[k]).join("/") : ""}</td>
+    <td>${p.level ?? ""}</td><td>${natureHtml(p.nature)}</td><td>${SAVE_KEYS.map((k) => p.ivs[k]).join("/")}</td><td>${p.stats ? SAVE_KEYS.map((k) => p.stats[k]).join("/") : ""}</td>
     <td><button class="btn" data-act="check" data-kind="${kind}" data-n="${n}">Vérifier</button></td></tr>`).join("");
-  const head = "<tr><th></th><th>Espèce</th><th>Niv.</th><th>Nature</th><th>IV PV/Atq/Déf/Vit/AtqS/DéfS</th><th>Stats</th><th></th></tr>";
+  const head = "<tr><th></th><th>Espèce</th><th>Niv.</th><th>Nature</th><th>IV PV/Atq/Déf/AtqS/DéfS/Vit</th><th>Stats</th><th></th></tr>";
   $("view").innerHTML = `
     <div class="card"><b>Importer le .dsv de DraStic</b><br><input type="file" id="file" style="margin-top:8px; width:100%">
       <div class="muted">Le fichier est lu sur cet appareil, il n'est envoyé nulle part.</div><div id="err" class="ko"></div></div>
@@ -649,6 +649,13 @@ const newReading = () => ({ level: "", stats: ["", "", "", "", "", ""] });
 const freshSim = () => ({ id: null, form: "", nature: 6, readings: [newReading()], check: null, note: "" });
 S.sim = freshSim();
 
+const natureStats = (n) => ({
+  up: [1, 2, 3, 4, 5].find((i) => SIM.naturePercent(n, i) === 110),
+  down: [1, 2, 3, 4, 5].find((i) => SIM.naturePercent(n, i) === 90) });
+const natureHtml = (n) => {
+  const { up, down } = natureStats(n), name = esc(BB2.NATURES[n] ?? "?");
+  return up ? `${name} <span class="ok">+${L.STAT_LABELS[up]}</span> <span class="ko">−${L.STAT_LABELS[down]}</span>` : `${name} <span class="muted">(neutre)</span>`;
+};
 const natureLabel = (n) => {
   const up = [1, 2, 3, 4, 5].find((i) => SIM.naturePercent(n, i) === 110), down = [1, 2, 3, 4, 5].find((i) => SIM.naturePercent(n, i) === 90);
   return up ? `${BB2.NATURES[n]} (+${L.STAT_LABELS[up]} −${L.STAT_LABELS[down]})` : `${BB2.NATURES[n]} (neutre)`;
@@ -677,6 +684,7 @@ function viewSim() {
       <div id="simForm"></div>
       <label class="field"><span>Nature</span>
         <select id="simNat">${BB2.NATURES.map((n, i) => `<option value="${i}" ${sm.nature === i ? "selected" : ""}>${esc(natureLabel(i))}</option>`).join("")}</select></label>
+      <div id="simNatInfo" class="muted">${natureHtml(sm.nature)}</div>
       ${sm.note ? `<div class="muted warn">${esc(sm.note)}</div>` : ""}
     </div>
     ${sm.readings.map((r, n) => `<div class="card" data-reading="${n}">
@@ -694,7 +702,7 @@ function viewSim() {
     const id = resolveSpecies($("simSp").value);
     if (id !== sm.id) { sm.id = id; sm.form = ""; fillSimForm(); renderSimOut(); }
   });
-  $("simNat").addEventListener("input", () => { sm.nature = Number($("simNat").value); renderSimOut(); });
+  $("simNat").addEventListener("input", () => { sm.nature = Number($("simNat").value); $("simNatInfo").innerHTML = natureHtml(sm.nature); renderSimOut(); });
   $("view").querySelectorAll("[data-reading] input").forEach((inp) => inp.addEventListener("input", () => {
     const r = sm.readings[Number(inp.closest("[data-reading]").dataset.reading)], f = inp.dataset.f;
     if (f === "level") r.level = inp.value; else r.stats[Number(f)] = inp.value;
